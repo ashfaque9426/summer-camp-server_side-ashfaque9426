@@ -49,6 +49,16 @@ async function run() {
             res.send(token);
         });
 
+        // verify admin middleware
+        const verifyAdmin = async(req, res, next) => {
+            const email = req.decoded.email;
+            const query = {email: email};
+            const user = await allUsersCollection.findOne(query);
+            
+            if(user?.role !== 'admin') return res.status(403).send({ error: true, message: "Unauthorized Access" })
+            next();
+        }
+
         // get all classes by hitting the bellow api
         app.get('/allClasses', async(req, res)=> {
             const query = { status: "approved"}
