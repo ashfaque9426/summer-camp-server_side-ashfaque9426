@@ -40,7 +40,7 @@ async function run() {
         // Connect the client to the server	(optional starting in v4.7)
         client.connect();
         const allClasses = client.db('summerSchoolCluster').collection('allClasses');
-        const instructorsData = client.db('summerSchoolCluster').collection('instructorsData');
+        const allUsersCollection = client.db('summerSchoolCluster').collection('allUsers');
 
         // jwt api
         app.post('/jwt', (req, res) => {
@@ -64,9 +64,58 @@ async function run() {
 
         app.get('/popularInstructors', async(req, res) => {
             const query = {numberOfStudents: {$gte: 10}};
-            const result = await instructorsData.find(query).toArray();
+            const result = await allUsersCollection.find(query).toArray();
             res.send(result);
-        })
+        });
+
+        // required Middlewares
+        // check Admin or not
+        app.get('/allUsers/admin/:email', verifyJWT, async(req, res) => {
+            const email = req.params.email;
+            if(req.decoded.email !== email) {
+                return res.send({admin: false});
+            }
+
+            const query = {
+                email: email
+            }
+
+            const user = await allUsersCollection.findOne(query);
+            const result = {admin: user?.role === 'admin'}
+            return res.send(result);
+        });
+
+        // check instructor or not
+        app.get('/allUsers/instructor/:email', verifyJWT, async(req, res) => {
+            const email = req.params.email;
+            if(req.decoded.email !== email) {
+                return res.send({instructor: false});
+            }
+
+            const query = {
+                email: email
+            }
+
+            const user = await allUsersCollection.findOne(query);
+            const result = {instructor: user?.role === 'instructor'};
+            res.send(result);
+        });
+
+        // check student or not
+        app.get('/allUsers/student/:email', verifyJWT, async(req, res) => {
+            const email = req.params.email;
+            if(req.decoded.email !== email) {
+                return res.send({ student: false});
+            }
+
+            const query = {
+                email: email
+            }
+
+            const user = await allUsersCollection.findOne(query);
+            const result = {student: user?.role === 'student'};
+            res.send(result);
+        });
 
         // Send a ping to confirm a successful connection
         await client.db("admin").command({ ping: 1 });
