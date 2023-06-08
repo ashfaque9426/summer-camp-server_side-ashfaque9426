@@ -51,17 +51,26 @@ async function run() {
 
         // get all classes by hitting the bellow api
         app.get('/allClasses', async(req, res)=> {
-            const result = await allClasses.find().toArray();
+            const query = { status: "approved"}
+            const result = await allClasses.find(query).toArray();
             res.send(result);
         });
 
-        // get top classes based on the number of students
+        // gets top classes based on the number of students
         app.get('/popularClasses', async(req, res) => {
             const query = { numberOfStudents: {$gte: 10 } };
             const result = await allClasses.find(query).toArray();
             res.send(result);
         });
 
+        // gets all instructors from collection
+        app.get('/instructors', async(req, res) => {
+            const query = {role: 'instructor'};
+            const result = await allUsersCollection.find(query).toArray();
+            res.send(result);
+        })
+
+        // gets popular instructors from collection
         app.get('/popularInstructors', async(req, res) => {
             const query = {numberOfStudents: {$gte: 10}};
             const result = await allUsersCollection.find(query).toArray();
