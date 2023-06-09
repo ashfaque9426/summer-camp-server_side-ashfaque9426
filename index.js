@@ -13,7 +13,7 @@ app.use(express.json());
 
 const verifyJWT = (req, res, next) => {
     const authorization = req.headers.authorization;
-    console.log(authorization)
+    // console.log(authorization)
     if (!authorization) {
         return res.status(401).send({ error: true, message: "Unauthorized Access" })
     }
@@ -41,6 +41,7 @@ async function run() {
         client.connect();
         const allClasses = client.db('summerSchoolCluster').collection('allClasses');
         const allUsersCollection = client.db('summerSchoolCluster').collection('allUsers');
+        const studentsAddedClasses = client.db('summerSchoolCluster').collection('studentPrefferedClasses');
 
         // jwt api
         app.post('/jwt', (req, res) => {
@@ -145,6 +146,34 @@ async function run() {
                 return res.send({ message: 'user already existed to the server' });
             }
             const result = await allUsersCollection.insertOne(userData);
+            res.send(result);
+        });
+
+        // posting students preffered classes and updating related document from the required collection
+        app.post('/studentsClass/:id', verifyJWT, async(req, res) => {
+            const email = req.decoded.email;
+            const id = req.params.id;
+            const receivedClass = req.body;
+            const query = {_id: id};
+
+            const existedClass = await studentsAddedClasses.findOne(query);
+            if (existedClass) return res.send({message: "Class already added to database"});
+
+            const classFromAllClasses = await allClasses.findOne({_id: new ObjectId(id)});
+            const updatedAvailableSeats = classFromAllClasses.availableSeats - 1;
+            const updatedNumberOfStudents = classFromAllClasses.numberOfStudents + 1;
+            const filter = {_id: new ObjectId(id)}
+            const updateDoc = {
+                $set: {
+                    availableSeats: updatedAvailableSeats,
+                    numberOfStudents: updatedNumberOfStudents
+                }
+            }
+            await allClasses.updateOne(filter, updateDoc);
+
+            receivedClass.email = email;
+
+            const result = await studentsAddedClasses.insertOne(receivedClass);
             res.send(result);
         });
 
