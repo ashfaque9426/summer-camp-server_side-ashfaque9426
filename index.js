@@ -171,7 +171,18 @@ async function run() {
             }
             await allClasses.updateOne(filter, updateDoc);
 
+            const filterOne = { nameOfClasses: { $in: ["Introduction to Photography"]} }
+            const updateDocOne = {
+                $set: {
+                    numberOfStudents: updatedNumberOfStudents
+                }
+            }
+
+            await allUsersCollection.updateOne(filterOne, updateDocOne);
+
             receivedClass.email = email;
+            receivedClass.availableSeats = updatedAvailableSeats;
+            receivedClass.numberOfStudents = updatedNumberOfStudents;
 
             const result = await studentsAddedClasses.insertOne(receivedClass);
             res.send(result);
