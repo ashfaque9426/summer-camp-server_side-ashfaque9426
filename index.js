@@ -139,6 +139,11 @@ async function run() {
         // posting a user after registration to the allUsers collection
         app.post('/newUser', async(req, res) => {
             const userData = req.body;
+            const query = {email: req.body.email};
+            const existedUser = await allUsersCollection.findOne(query);
+            if (existedUser) {
+                return res.send('user already existed to the server');
+            }
             const result = await allUsersCollection.insertOne(userData);
             res.send(result);
         })
