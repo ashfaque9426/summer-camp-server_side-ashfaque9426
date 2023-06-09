@@ -142,11 +142,11 @@ async function run() {
             const query = {email: req.body.email};
             const existedUser = await allUsersCollection.findOne(query);
             if (existedUser) {
-                return res.send('user already existed to the server');
+                return res.send({ message: 'user already existed to the server' });
             }
             const result = await allUsersCollection.insertOne(userData);
             res.send(result);
-        })
+        });
 
         // Send a ping to confirm a successful connection
         await client.db("admin").command({ ping: 1 });
