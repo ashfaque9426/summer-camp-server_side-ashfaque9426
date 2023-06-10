@@ -182,6 +182,18 @@ async function run() {
 
         });
 
+        app.delete('/studentsClass/:id/:email', verifyJWT, async(req, res)=> {
+            const decodedEmail = req.decoded.email;
+            const email = req.params.email;
+            const id = req.params.id;
+
+            if(decodedEmail !== email) return res.status(403).send({message: "forbidden access"});
+
+            const query = { _id: id, email: email, payment: 'pending' }
+            const result = await studentsAddedClasses.deleteOne(query);
+            res.send(result);
+        });
+
         // app.post('/studentsClass/:id', verifyJWT, async(req, res) => {
         //     const email = req.decoded.email;
         //     const id = req.params.id;
