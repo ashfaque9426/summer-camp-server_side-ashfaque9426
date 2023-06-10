@@ -213,9 +213,10 @@ async function run() {
             const instructorEmail = paymentData.instructorEmail;
             const studentEmail = paymentData.studentEmail;
             const className = paymentData.className;
+            const paymentDate = paymentData.date;
 
             const classFromAllClasses = await allClasses.findOne({ _id: new ObjectId(id), className: className });
-            const updatedAvailableSeats = classFromAllClasses.availableSeats - 1;
+            const updatedAvailableSeats = classFromAllClasses.availableSeats > 0 ? classFromAllClasses.availableSeats - 1 : 0;
             const updatedNumberOfStudents = classFromAllClasses.numberOfStudents + 1;
 
             const filter = { _id: new ObjectId(id), className: className };
@@ -252,6 +253,7 @@ async function run() {
                 email: paymentData.email,
                 transactionId: paymentData.transactionId,
                 paid: paymentData.price,
+                date: paymentDate,
                 status: paymentData.status
             }
 
