@@ -42,6 +42,7 @@ async function run() {
         const allClasses = client.db('summerSchoolCluster').collection('allClasses');
         const allUsersCollection = client.db('summerSchoolCluster').collection('allUsers');
         const studentsAddedClasses = client.db('summerSchoolCluster').collection('studentPrefferedClasses');
+        const paymentCollection = client.db('summerSchoolCluster').collection('paymentCollectionData');
 
         // jwt api
         app.post('/jwt', (req, res) => {
@@ -192,6 +193,73 @@ async function run() {
 
         });
 
+        // create payment intent api
+        app.post('/create-payment-intent', verifyJWT, async(req, res) => {
+            const {price} = req.body;
+            const amount = parseInt(price * 100);
+
+            const paymentIntent = await stripe.paymentIntents.create({
+                amount: amount,
+                currency: 'usd',
+                payment_method_types: ['card']
+            });
+            res.send({clientSecret: paymentIntent.client_secret});
+        });
+
+        // storing payment related data and updating required field data
+        app.post('/payments', verifyJWT, async(req, res) => {
+            const paymentData = req.body;
+            const id = paymentData.classId;
+            const instructorEmail = paymentData.instructorEmail;
+            const studentEmail = paymentData.studentEmail;
+            const className = paymentData.className;
+
+            const classFromAllClasses = await allClasses.findOne({ _id: new ObjectId(id), className: className });
+            const updatedAvailableSeats = classFromAllClasses.availableSeats - 1;
+            const updatedNumberOfStudents = classFromAllClasses.numberOfStudents + 1;
+
+            const filter = { _id: new ObjectId(id), className: className };
+
+            const updateDoc = {
+                $set: {
+                    availableSeats: updatedAvailableSeats,
+                    numberOfStudents: updatedNumberOfStudents
+                }
+            }
+            await allClasses.updateOne(filter, updateDoc);
+
+            const filterOne = { nameOfClasses: { $in: ["Introduction to Photography"] }, email: instructorEmail };
+
+            const updateDocOne = {
+                $set: {
+                    numberOfStudents: updatedNumberOfStudents
+                }
+            }
+
+            await allUsersCollection.updateOne(filterOne, updateDocOne);
+
+            const filterTwo = { email: studentEmail, className: className }
+
+            const updateDocTwo = {
+                $set: {
+                    payment: "paid"   
+                }
+            }
+
+            await studentsAddedClasses.updateOne(filterTwo, updateDocTwo);
+
+            const paymentObj = {
+                email: paymentData.email,
+                transactionId: paymentData.transactionId,
+                paid: paymentData.price,
+                status: paymentData.status
+            }
+
+            const result = paymentCollection.insertOne(paymentObj);
+            res.send(result);
+
+        });
+
         app.delete('/studentsClass/:id/:email', verifyJWT, async(req, res)=> {
             const decodedEmail = req.decoded.email;
             const email = req.params.email;
@@ -203,44 +271,6 @@ async function run() {
             const result = await studentsAddedClasses.deleteOne(query);
             res.send(result);
         });
-
-        // app.post('/studentsClass/:id', verifyJWT, async(req, res) => {
-        //     const email = req.decoded.email;
-        //     const id = req.params.id;
-        //     const receivedClass = req.body;
-        //     const query = {_id: id};
-
-        //     const existedClass = await studentsAddedClasses.findOne(query);
-        //     if (existedClass) return res.send({message: "Class already added to database"});
-
-        //     const classFromAllClasses = await allClasses.findOne({_id: new ObjectId(id)});
-        //     const updatedAvailableSeats = classFromAllClasses.availableSeats - 1;
-        //     const updatedNumberOfStudents = classFromAllClasses.numberOfStudents + 1;
-        //     const filter = {_id: new ObjectId(id)}
-        //     const updateDoc = {
-        //         $set: {
-        //             availableSeats: updatedAvailableSeats,
-        //             numberOfStudents: updatedNumberOfStudents
-        //         }
-        //     }
-        //     await allClasses.updateOne(filter, updateDoc);
-
-        //     const filterOne = { nameOfClasses: { $in: ["Introduction to Photography"]} }
-        //     const updateDocOne = {
-        //         $set: {
-        //             numberOfStudents: updatedNumberOfStudents
-        //         }
-        //     }
-
-        //     await allUsersCollection.updateOne(filterOne, updateDocOne);
-
-        //     receivedClass.email = email;
-        //     receivedClass.availableSeats = updatedAvailableSeats;
-        //     receivedClass.numberOfStudents = updatedNumberOfStudents;
-
-        //     const result = await studentsAddedClasses.insertOne(receivedClass);
-        //     res.send(result);
-        // });
 
         // Send a ping to confirm a successful connection
         await client.db("admin").command({ ping: 1 });
