@@ -169,7 +169,8 @@ async function run() {
             const email = req.decoded.email;
             const id = req.params.id;
             const receivedClass = req.body;
-            const query = {_id: id};
+            const className = receivedClass.className;
+            const query = {classId: id, className: className, email: email};
 
             const existedClass = await studentsAddedClasses.findOne(query);
             if (existedClass) return res.send({message: "Class already added to database"});
@@ -189,7 +190,7 @@ async function run() {
 
             if(decodedEmail !== email) return res.status(403).send({message: "forbidden access"});
 
-            const query = { _id: id, email: email, payment: 'pending' }
+            const query = { classId: id, email: email, payment: 'pending' }
             const result = await studentsAddedClasses.deleteOne(query);
             res.send(result);
         });
