@@ -274,6 +274,7 @@ async function run() {
             await studentsAddedClasses.updateOne(filterTwo, updateDocTwo);
 
             const paymentObj = {
+                purchase: className,
                 email: paymentData.email,
                 transactionId: paymentData.transactionId,
                 paid: paymentData.price,
