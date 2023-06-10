@@ -190,7 +190,7 @@ async function run() {
 
             if(decodedEmail !== email) return res.status(403).send({message: "forbidden access"});
 
-            const query = { classId: id, email: email, payment: 'pending' }
+            const query = { _id: new ObjectId(id), email: email, payment: 'pending' }
             const result = await studentsAddedClasses.deleteOne(query);
             res.send(result);
         });
