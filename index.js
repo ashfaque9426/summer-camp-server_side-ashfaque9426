@@ -137,6 +137,21 @@ async function run() {
             res.send(result);
         });
 
+        // get all payment pending classes from collection for a specifiq user
+        app.get('/pendingClasses/:email', verifyJWT, async(req, res) => {
+            const decodedEmail = req.decoded.email;
+            const email = req.params.email;
+
+            if(decodedEmail !== email) {
+                return res.status(403).send({error: true, message: "Forbidden Access"})
+            }
+
+            const query = {email: email, payment: 'pending'}
+
+            const result = await studentsAddedClasses.find(query).toArray();
+            res.send(result);
+        });
+
         // posting a user after registration to the allUsers collection
         app.post('/newUser', async(req, res) => {
             const userData = req.body;
@@ -149,7 +164,7 @@ async function run() {
             res.send(result);
         });
 
-        // posting students preffered classes and updating related document from the required collection
+        // posting students preffered classes
         app.post('/studentsClass/:id', verifyJWT, async(req, res) => {
             const email = req.decoded.email;
             const id = req.params.id;
@@ -159,34 +174,51 @@ async function run() {
             const existedClass = await studentsAddedClasses.findOne(query);
             if (existedClass) return res.send({message: "Class already added to database"});
 
-            const classFromAllClasses = await allClasses.findOne({_id: new ObjectId(id)});
-            const updatedAvailableSeats = classFromAllClasses.availableSeats - 1;
-            const updatedNumberOfStudents = classFromAllClasses.numberOfStudents + 1;
-            const filter = {_id: new ObjectId(id)}
-            const updateDoc = {
-                $set: {
-                    availableSeats: updatedAvailableSeats,
-                    numberOfStudents: updatedNumberOfStudents
-                }
-            }
-            await allClasses.updateOne(filter, updateDoc);
-
-            const filterOne = { nameOfClasses: { $in: ["Introduction to Photography"]} }
-            const updateDocOne = {
-                $set: {
-                    numberOfStudents: updatedNumberOfStudents
-                }
-            }
-
-            await allUsersCollection.updateOne(filterOne, updateDocOne);
-
             receivedClass.email = email;
-            receivedClass.availableSeats = updatedAvailableSeats;
-            receivedClass.numberOfStudents = updatedNumberOfStudents;
+            receivedClass.payment = "pending";
 
             const result = await studentsAddedClasses.insertOne(receivedClass);
             res.send(result);
+
         });
+
+        // app.post('/studentsClass/:id', verifyJWT, async(req, res) => {
+        //     const email = req.decoded.email;
+        //     const id = req.params.id;
+        //     const receivedClass = req.body;
+        //     const query = {_id: id};
+
+        //     const existedClass = await studentsAddedClasses.findOne(query);
+        //     if (existedClass) return res.send({message: "Class already added to database"});
+
+        //     const classFromAllClasses = await allClasses.findOne({_id: new ObjectId(id)});
+        //     const updatedAvailableSeats = classFromAllClasses.availableSeats - 1;
+        //     const updatedNumberOfStudents = classFromAllClasses.numberOfStudents + 1;
+        //     const filter = {_id: new ObjectId(id)}
+        //     const updateDoc = {
+        //         $set: {
+        //             availableSeats: updatedAvailableSeats,
+        //             numberOfStudents: updatedNumberOfStudents
+        //         }
+        //     }
+        //     await allClasses.updateOne(filter, updateDoc);
+
+        //     const filterOne = { nameOfClasses: { $in: ["Introduction to Photography"]} }
+        //     const updateDocOne = {
+        //         $set: {
+        //             numberOfStudents: updatedNumberOfStudents
+        //         }
+        //     }
+
+        //     await allUsersCollection.updateOne(filterOne, updateDocOne);
+
+        //     receivedClass.email = email;
+        //     receivedClass.availableSeats = updatedAvailableSeats;
+        //     receivedClass.numberOfStudents = updatedNumberOfStudents;
+
+        //     const result = await studentsAddedClasses.insertOne(receivedClass);
+        //     res.send(result);
+        // });
 
         // Send a ping to confirm a successful connection
         await client.db("admin").command({ ping: 1 });
