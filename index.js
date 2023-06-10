@@ -152,6 +152,15 @@ async function run() {
             res.send(result);
         });
 
+        // getting specifiq class selected via student by id
+        app.get('/selectedClass/:id', async(req, res) => {
+            const id = req.params.id;
+            const query = {_id: new ObjectId(id), payment: "pending"};
+
+            const result = await studentsAddedClasses.findOne(query);
+            res.send(result);
+        });
+
         // posting a user after registration to the allUsers collection
         app.post('/newUser', async(req, res) => {
             const userData = req.body;
