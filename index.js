@@ -162,6 +162,30 @@ async function run() {
             res.send(result);
         });
 
+        // get all the classes after succefull payment
+        app.get('/getPaidClasses/:email', verifyJWT, async(req, res) => {
+            const decodedEmail = req.decoded.email;
+            const email = req.params.email;
+            
+            if (decodedEmail !== email) return res.status(403).send({ error: true, message: 'Forbidden Access' });
+
+            const filter = {email: email, payment: 'paid'}
+            const result = await studentsAddedClasses.find(filter).toArray();
+            res.send(result);
+        });
+
+        // sorted data for student added after successfull payment(history)
+        app.get('/sortedPaidClasses/:email', verifyJWT, async(req, res) => {
+            const decodedEmail = req.decoded.email;
+            const email = req.params.email;
+
+            if(decodedEmail !== email) return res.status(403).send({error: true, message: 'Forbidden Access'});
+
+            const filter = {email: email};
+            const result = await paymentCollection.find(filter).sort({$natural: -1}).toArray();
+            res.send(result);
+        });
+
         // posting a user after registration to the allUsers collection
         app.post('/newUser', async(req, res) => {
             const userData = req.body;
