@@ -186,6 +186,19 @@ async function run() {
             res.send(result);
         });
 
+        // get instructor classes
+        app.get('/getInstructorClasses/:email', verifyJWT, async(req, res) => {
+            const decodedEmail = req.decoded.email;
+            const email = req.params.email;
+
+            if (decodedEmail !== email) return res.status(403).send({ error: true, message: "Forbidden Access" });
+
+            const query = {instructorEmail: email}
+
+            const result = await allClasses.find(query).toArray();
+            res.send(result);
+        })
+
         // posting a user after registration to the allUsers collection
         app.post('/newUser', async(req, res) => {
             const userData = req.body;
@@ -288,12 +301,18 @@ async function run() {
         });
 
         // add a class api so do update required fields
-        app.post('addAClass/:email', verifyJWT, async (req, res) => {
+        app.post('/addAClass/:email', verifyJWT, async (req, res) => {
             const decodedEmail = req.decoded.email;
             const email = req.params.email;
             const addedClass = req.body;
 
             if (decodedEmail !== email) return res.status(403).send({ error: true, message: "Forbidden Access" });
+
+            const query = { className: addedClass.className, instructorName: addedClass.instructorName, instructorEmail: addedClass.instructorEmail };
+
+            const existedClass = await allClasses.findOne(query);
+
+            if(existedClass) return res.send({message: 'Class Already Added.'});
             
             const result = await allClasses.insertOne(addedClass);
             res.send(result);
