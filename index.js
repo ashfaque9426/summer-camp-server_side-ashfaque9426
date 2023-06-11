@@ -340,10 +340,49 @@ async function run() {
         });
 
         // handle approve update
-        app.patch('/approveUpdate/:id', verifyJWT, verifyAdmin, async (req, res) => {
+        app.patch('/updateStatus/:id/:email/:status', verifyJWT, verifyAdmin, async (req, res) => {
+            const decodedEmail = req.decoded.email;
+            const email = req.params.email;
+            const id = req.params.id;
+            const status = req.params.status;
 
+            if(decodedEmail !== email) return res.status(401).send({message: "Unauthorized Access"});
+
+            const query = {_id: new ObjectId(id)};
+            const updateDoc = {
+                $set: {
+                    status: status
+                }
+            }
+            const options = { upsert: true };
+
+            const result = await allClasses.updateOne(query, updateDoc, options);
+            res.send(result);
         });
 
+        // handle feedback from admin
+        app.patch('/handleFeedback/:email/:id', verifyJWT, verifyAdmin, async(req, res) => {
+            const decodedEmail = req.decoded.email;
+            const email = req.params.email;
+            const id = req.params.id;
+            const feedback = req.body.feedback;
+            console.log(id, feedback)
+
+            if(decodedEmail !== email) return res.status(403).send({message: "Forbidden Access"});
+
+            const query = { _id: new ObjectId(id) }
+            const options = { upsert: true };
+            const updateDoc = {
+                $set: {
+                    feedback: feedback
+                }
+            }
+
+            const result = await allClasses.updateOne(query, updateDoc, options);
+            res.send(result);
+        });
+
+        // delete operation on students selected pending unpaid classes api
         app.delete('/studentsClass/:id/:email', verifyJWT, async(req, res)=> {
             const decodedEmail = req.decoded.email;
             const email = req.params.email;
