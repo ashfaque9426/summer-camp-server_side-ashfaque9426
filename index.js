@@ -371,6 +371,28 @@ async function run() {
             res.send(result);
         });
 
+        // change role of a user
+        app.patch('/updateRole/:id/:email/:role', verifyJWT, verifyAdmin, async(req, res) => {
+            const decodedEmail = req.decoded.email;
+            const email = req.params.email;
+            const id = req.params.id;
+            const role = req.params.role;
+
+            if (decodedEmail !== email) return res.status(401).send({ message: "Unauthorized Access" });
+
+            const query = {_id: new ObjectId(id)};
+            const updateDoc = {
+                $set: {
+                    role: role
+                }
+            }
+
+            const options = { upsert: true };
+
+            const result = await allUsersCollection.updateOne(query, updateDoc, options);
+            res.send(result);
+        });
+
         // handle feedback from admin
         app.patch('/handleFeedback/:email/:id', verifyJWT, verifyAdmin, async(req, res) => {
             const decodedEmail = req.decoded.email;
