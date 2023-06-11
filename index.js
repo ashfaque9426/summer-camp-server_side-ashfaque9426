@@ -313,47 +313,36 @@ async function run() {
         });
 
         // add a class api so do update required fields
-        app.post('/addAClass/:email', verifyJWT, async (req, res) => {
+        app.post('/addAClass/:email', verifyJWT, async(req, res) => {
             const decodedEmail = req.decoded.email;
             const email = req.params.email;
             const addedClass = req.body;
+            const instructorEmail = req.body.instructorEmail;
+            const className = req.body.className;
 
-            if (decodedEmail !== email) return res.status(403).send({ error: true, message: "Forbidden Access" });
+            if(decodedEmail !== email) return res.status(403).send({error: true, message: "Forbidden Access"});
 
-            const query = { className: addedClass.className, instructorName: addedClass.instructorName, instructorEmail: addedClass.instructorEmail };
+            const query = { email: instructorEmail };
 
-            const existedClass = await allClasses.findOne(query);
+            await allUsersCollection.updateOne(query, { $push: { nameOfClasses: className } });
+            const findUser = await allUsersCollection.findOne(query);
+            console.log(findUser)
+            const newNumberOfClass = findUser.nameOfClasses.length > 0 ? findUser.nameOfClasses.length : 1;
+            const updateDoc = {
+                $set: {
+                    numberOfClasses: newNumberOfClass
+                }
+            }
+            await allUsersCollection.updateOne(query, updateDoc);
 
-            if(existedClass) return res.send({message: 'Class Already Added.'});
-            
             const result = await allClasses.insertOne(addedClass);
             res.send(result);
         });
 
-        // app.post('addAClass/:email', verifyJWT, async(req, res) => {
-        //     const decodedEmail = req.decoded.email;
-        //     const email = req.params.email;
-        //     const addedClass = req.body;
-        //     const instructorEmail = req.body.email;
-        //     const className = req.body.className;
+        // handle approve update
+        app.patch('/approveUpdate/:id', verifyJWT, verifyAdmin, async (req, res) => {
 
-        //     if(decodedEmail !== email) return res.status(403).send({error: true, message: "Forbidden Access"});
-
-        //     const query = { email: instructorEmail };
-
-        //     await allUsersCollection.updateOne(query, { $push: { nameOfClasses: className } });
-        //     const findUser = await allUsersCollection.findOne(query);
-        //     const newNumberOfClass = findUser.nameOfClasses.length > 0 ? findUser.nameOfClasses.length : 1;
-        //     const updateDoc = {
-        //         $set: {
-        //             numberOfClasses: newNumberOfClass
-        //         }
-        //     }
-        //     await allUsersCollection.updateOne(query, updateDoc);
-
-        //     const result = await allClasses.insertOne(addedClass);
-        //     res.send(result);
-        // });
+        });
 
         app.delete('/studentsClass/:id/:email', verifyJWT, async(req, res)=> {
             const decodedEmail = req.decoded.email;
