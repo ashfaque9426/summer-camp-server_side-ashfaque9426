@@ -58,6 +58,7 @@ async function run() {
             const user = await allUsersCollection.findOne(query);
             
             if(user?.role !== 'admin') return res.status(403).send({ error: true, message: "Unauthorized Access" })
+
             next();
         }
 
@@ -197,7 +198,18 @@ async function run() {
 
             const result = await allClasses.find(query).toArray();
             res.send(result);
-        })
+        });
+
+        // get all classes for admin
+        app.get('/getAllClassForAdmin/:email', verifyJWT, verifyAdmin, async(req, res) => {
+            const decodedEmail = req.decoded.email;
+            const email = req.params.email;
+
+            if(decodedEmail !== email) return res.status(401).send({message: "Unauthorized Access"});
+
+            const result = await allClasses.find().toArray();
+            res.send(result);
+        });
 
         // posting a user after registration to the allUsers collection
         app.post('/newUser', async(req, res) => {
