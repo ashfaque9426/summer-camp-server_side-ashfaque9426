@@ -211,6 +211,17 @@ async function run() {
             res.send(result);
         });
 
+        // get all users for admin
+        app.get('/getAllUsersForAdmin/:email', verifyJWT, verifyAdmin, async(req, res) => {
+            const decodedEmail = req.decoded.email;
+            const email = req.params.email;
+
+            if(decodedEmail !== email) return res.status(401).send({message: "unauthorized access"});
+
+            const result = await allUsersCollection.find().toArray();
+            res.send(result);
+        });
+
         // posting a user after registration to the allUsers collection
         app.post('/newUser', async(req, res) => {
             const userData = req.body;
