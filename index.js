@@ -253,7 +253,7 @@ async function run() {
             }
             await allClasses.updateOne(filter, updateDoc);
 
-            const filterOne = { nameOfClasses: { $in: ["Introduction to Photography"] }, email: instructorEmail };
+            const filterOne = { email: instructorEmail };
 
             const updateDocOne = {
                 $set: {
